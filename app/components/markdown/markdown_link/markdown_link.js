@@ -12,6 +12,8 @@ import {DeepLinkTypes} from 'app/constants';
 import {getCurrentServerUrl} from 'app/init/credentials';
 import mattermostManaged from 'app/mattermost_managed';
 import BottomSheet from 'app/utils/bottom_sheet';
+import {alertErrorWithFallback} from 'app/utils/general';
+import {t} from 'app/utils/i18n';
 import {preventDoubleTap} from 'app/utils/tap';
 import {matchDeepLink, normalizeProtocol} from 'app/utils/url';
 
@@ -55,7 +57,16 @@ export default class MarkdownLink extends PureComponent {
         const match = matchDeepLink(url, serverUrl, siteURL);
         if (match) {
             if (match.type === DeepLinkTypes.CHANNEL) {
-                this.props.actions.handleSelectChannelByName(match.channelName, match.teamName);
+                const response = await this.props.actions.handleSelectChannelByName(match.channelName, match.teamName);
+
+                if (response && response.error) {
+                    const linkFailedMessage = {
+                        id: t('permalink.error.access'),
+                        defaultMessage: 'Permalink belongs to a deleted message or to a channel to which you do not have access.',
+                    };
+
+                    alertErrorWithFallback(this.context.intl, response.error.message || {}, linkFailedMessage);
+                }
             } else if (match.type === DeepLinkTypes.PERMALINK) {
                 onPermalinkPress(match.postId, match.teamName);
             }

@@ -401,13 +401,18 @@ export function handleSelectChannel(channelId, fromPushNotification = false) {
 }
 
 export function handleSelectChannelByName(channelName, teamName) {
-    return async (dispatch, getState) => {
+    return async (dispatch, getState) => { // eslint-disable-line consistent-return
         const state = getState();
         const {teams: currentTeams, currentTeamId} = state.entities.teams;
         const currentTeam = currentTeams[currentTeamId];
         const currentTeamName = currentTeam?.name;
-        const {data: channel} = await dispatch(getChannelByNameAndTeamName(teamName || currentTeamName, channelName));
+        const response = await dispatch(getChannelByNameAndTeamName(teamName || currentTeamName, channelName));
+        const {data: channel} = response;
         const currentChannelId = getCurrentChannelId(state);
+
+        if (response.error) {
+            return response;
+        }
 
         if (teamName && teamName !== currentTeamName) {
             const team = getTeamByName(state, teamName);
